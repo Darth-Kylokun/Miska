@@ -39,7 +39,7 @@ class animalPics(commands.Cog):
             json.dump(miskaJSON, f, indent=4)
 
         await ctx.message.delete()
-        await ctx.send('Successfully uploaded :thumbsup:')
+        await ctx.send('Successfully uploaded :thumbsup:', delete_after=15)
 
     @commands.command()
     @commands.cooldown(5, 1, commands.BucketType.user)
