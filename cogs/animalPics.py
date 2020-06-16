@@ -25,9 +25,13 @@ class animalPics(commands.Cog):
 
         archiveOfPics = self.bot.get_user(327205633319239681)
 
+        idArr = []
+
         for x in ctx.message.attachments:
             animalPicURL = x.url
+
             miskaJSON[str(ctx.guild.id)]["animalURLS"].append([ctx.author.name, animalPicURL])
+            idArr.append(str(len(miskaJSON[str(ctx.guild.id)]["animalURLS"])))
             async with aiohttp.ClientSession() as session:                                     #start of archival to make sure the link is valid
                 async with session.get(animalPicURL) as r:                                     #
                     if r.status != 200:                                                        #
@@ -37,8 +41,8 @@ class animalPics(commands.Cog):
 
         with open(jsonFile, 'w') as f:
             json.dump(miskaJSON, f, indent=4)
-
-        await ctx.send('Successfully uploaded :thumbsup:')
+        ids = '/'.join(idArr)
+        await ctx.send(f'Successfully uploaded :thumbsup: ID: {ids}')
 
     @commands.command()
     @commands.cooldown(5, 1, commands.BucketType.user)
@@ -47,7 +51,7 @@ class animalPics(commands.Cog):
         with open(jsonFile, 'r') as f:
             miskaJSON = json.load(f)
 
-        if id == -1:
+        if id == -1 or id == None:
             picId = random.randint(0, len(miskaJSON[str(ctx.guild.id)]["animalURLS"]))
             picArr = miskaJSON[str(ctx.guild.id)]["animalURLS"][picId]
             picAuthor = picArr[0]
@@ -55,7 +59,7 @@ class animalPics(commands.Cog):
 
             embed = discord.Embed(
                 title=f"Animal Picture",
-                description=f"Picture taken by {picAuthor} | ID: {picId+1}",
+                description=f"Picture uploaded by {picAuthor} | ID: {picId+1}",
                 color=discord.Color.blue()
             )
             embed.set_image(url=picURL)
@@ -73,7 +77,7 @@ class animalPics(commands.Cog):
 
                 embed = discord.Embed(
                     title=f"Animal Picture",
-                    description=f"Picture taken by {picAuthor} | ID: {id}",
+                    description=f"Picture uploaded by {picAuthor} | ID: {id}",
                     color=discord.Color.blue()
                 )
                 embed.set_image(url=picURL)
