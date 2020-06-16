@@ -20,8 +20,7 @@ class changePrefix(commands.Cog):
         with open(jsonFile, 'w') as f:
             json.dump(miskaJSON, f, indent=4)
 
-        await ctx.message.delete()
-        await ctx.send(f'Successfully change prefix to {prefix}', delete_after=15)
+        await ctx.send(f'Successfully change prefix to {prefix}')
 
     @prefix.error
     async def prefix_error(self, ctx, error):
