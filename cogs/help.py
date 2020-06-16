@@ -17,6 +17,7 @@ class help(commands.Cog):
         embed.add_field(name="Command: pic", value="Return a random picture from animal pictures that have been uploaded optionally you can specify a pictures id", inline=False)
         embed.add_field(name="Command: delete", value="Deletes a uploaded animal picture", inline=False)
         embed.add_field(name="Command: prefix", value="Specifies a new prefix for the server", inline=False)
+        embed.add_field(name="Command: help", value="Sends a embed of all of Miska bots commands", inline=False)
 
         await ctx.send(embed=embed)
 
