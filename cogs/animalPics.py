@@ -38,8 +38,7 @@ class animalPics(commands.Cog):
         with open(jsonFile, 'w') as f:
             json.dump(miskaJSON, f, indent=4)
 
-        await ctx.message.delete()
-        await ctx.send('Successfully uploaded :thumbsup:', delete_after=15)
+        await ctx.send('Successfully uploaded :thumbsup:')
 
     @commands.command()
     @commands.cooldown(5, 1, commands.BucketType.user)
@@ -54,12 +53,15 @@ class animalPics(commands.Cog):
             picAuthor = picArr[0]
             picURL = picArr[1]
 
-            async with aiohttp.ClientSession() as session:
-                async with session.get(picURL) as r:
-                    if r.status != 200:
-                        return await ctx.send('Failed to upload photo...')
-                    photo = io.BytesIO(await r.read())
-                    await ctx.send(f"Picture uploaded by {picAuthor}, ID: {picId+1}", file=discord.File(photo, 'animalPic.jpg'))
+            embed = discord.Embed(
+                title=f"Animal Picture",
+                description=f"Picture taken by {picAuthor} | ID: {picId+1}",
+                color=discord.Color.blue()
+            )
+            embed.set_image(url=picURL)
+            embed.set_footer(text=ctx.author.display_name, icon_url=ctx.author.avatar_url)
+
+            await ctx.send(embed=embed)
         else:
             try:
                 if id > len(miskaJSON[str(ctx.guild.id)]["animalURLS"]) or id <= 0:
@@ -69,12 +71,15 @@ class animalPics(commands.Cog):
                 picAuthor = picArr[0]
                 picURL = picArr[1]
 
-                async with aiohttp.ClientSession() as session:
-                    async with session.get(picURL) as r:
-                        if r.status != 200:
-                            return await ctx.send('Failed to upload photo...')
-                        photo = io.BytesIO(await r.read())
-                        await ctx.send(f"Picture uploaded by {picAuthor}, ID: {id}", file=discord.File(photo, 'animalPic.jpg'))
+                embed = discord.Embed(
+                    title=f"Animal Picture",
+                    description=f"Picture taken by {picAuthor} | ID: {id}",
+                    color=discord.Color.blue()
+                )
+                embed.set_image(url=picURL)
+                embed.set_footer(text=ctx.author.display_name, icon_url=ctx.author.avatar_url)
+
+                await ctx.send(embed=embed)
             except pictureIdError:
                 await ctx.message.delete()
                 await ctx.send(f'{ctx.author.mention}, you gave a picture id that does not exist',
