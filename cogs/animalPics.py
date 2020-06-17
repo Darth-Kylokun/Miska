@@ -42,6 +42,10 @@ class animalPics(commands.Cog):
             for x in ctx.message.attachments:
                 animalPicURL = x.url
 
+                if not animalPicURL.endswith(".png") and not animalPicURL.endswith(".jpg") and not animalPicURL.endswith(".gif"):
+                    await ctx.send(f"{ctx.author.mention}, failed to upload a file because it did not have the correct file extension")
+                    continue
+
                 miskaJSON[str(ctx.guild.id)]["animalURLS"].append([ctx.author.name, animalPicURL])
                 idArr.append(str(len(miskaJSON[str(ctx.guild.id)]["animalURLS"])))
                 async with aiohttp.ClientSession() as session:                                     #start of archival to make sure the link is valid
@@ -53,16 +57,18 @@ class animalPics(commands.Cog):
 
             with open(jsonFile, 'w') as f:
                 json.dump(miskaJSON, f, indent=4)
-            ids = '/'.join(idArr)
 
+            if len(idArr) == 0:
+                return None
+
+            ids = '/'.join(idArr)
             await ctx.send(f'Successfully uploaded :thumbsup: ID: {ids}')
         except noPictures:
             await ctx.message.delete()
-            await ctx.send(f'{ctx.author.mention}, please attach a image to be uploaded',
+            await ctx.send(f'{ctx.author.mention}, please attach an image to be uploaded',
                            delete_after=15)
 
     @commands.command()
-    @commands.cooldown(5, 1, commands.BucketType.user)
     async def pic(self, ctx, id=-1):
         await ctx.channel.trigger_typing()
         with open(jsonFile, 'r') as f:
