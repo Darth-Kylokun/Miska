@@ -11,13 +11,13 @@ class help(commands.Cog):
         await ctx.channel.trigger_typing()
         embed = discord.Embed(color=discord.Color.blue())
 
-        embed.set_footer(text=f"{ctx.author.display_name}", icon_url=ctx.author.avatar_url)
         embed.set_author(name="Miska Bot - Help and Documentation", icon_url=self.bot.user.avatar_url)
-        embed.add_field(name="Command: upload", value="Uploads your animal picture, must have the file extension of png, jpg, and or gif", inline=False)
-        embed.add_field(name="Command: pic", value="Return a random picture from animal pictures that have been uploaded optionally you can specify a pictures id", inline=False)
-        embed.add_field(name="Command: delete", value="Deletes a uploaded animal picture", inline=False)
+        embed.set_footer(text=f"{ctx.author.display_name}", icon_url=ctx.author.avatar_url)
+        embed.add_field(name="Command: upload", value="Uploads your animal picture, must have the file extension of png, jpg, or gif", inline=False)
+        embed.add_field(name="Command: pic", value="Returns a random picture from animal pictures that have been uploaded optionally you can specify a pictures id", inline=False)
+        embed.add_field(name="Command: delete", value="Deletes an uploaded animal picture", inline=False)
         embed.add_field(name="Command: prefix", value="Specifies a new prefix for the server", inline=False)
-        embed.add_field(name="Command: help", value="Sends a embed of Miska bots help and documentation", inline=False)
+        embed.add_field(name="Command: help", value="Sends an embed of Miska bot's help and documentation", inline=False)
 
         await ctx.send(embed=embed)
 
