@@ -264,6 +264,7 @@ class animalPics(commands.Cog):
         await ctx.send(f"Whitelisted tags are: {tagsString}")
 
     @commands.command()
+    @commands.has_permissions(manage_messages=True)
     async def retag(self, ctx, id: int, newtag: str):
         try:
             await ctx.channel.trigger_typing()
@@ -306,6 +307,10 @@ class animalPics(commands.Cog):
             await ctx.message.delete()
             await ctx.send(f'{ctx.author.mention}, please specify a id and a new tag',
                            delete_after=15)
+        elif isinstance(error, commands.MissingPermissions):
+            await ctx.send(f'{ctx.author.mention}, you don\'t have the required permissions to manage messages',
+                           delete_after=15)
+            await ctx.message.delete()
 
 
     @commands.command()
