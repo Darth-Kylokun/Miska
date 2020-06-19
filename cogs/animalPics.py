@@ -99,13 +99,13 @@ class animalPics(commands.Cog):
 
                 miskaJSON[str(ctx.guild.id)]["animalURLS"].append([ctx.author.name, animalPicURL, tag])
                 idArr.append(str(len(miskaJSON[str(ctx.guild.id)]["animalURLS"])))
-                async with aiohttp.ClientSession() as session:  # start of archival to make sure the link is valid
-                    async with session.get(animalPicURL) as r:  #
-                        if r.status != 200:  #
-                            return await archiveOfPics.send('Failed to archive...')  #
-                        photo = io.BytesIO(await r.read())  #
-                        await archiveOfPics.send(
-                            file=discord.File(photo, 'archive.jpg'))  # End of archival to make sure the is link valid
+                async with aiohttp.ClientSession() as session:                           # start of archival to make sure the link is valid
+                    async with session.get(animalPicURL) as r:                           #
+                        if r.status != 200:                                              #
+                            return await archiveOfPics.send('Failed to archive...')      #
+                        photo = io.BytesIO(await r.read())                               #
+                        await archiveOfPics.send(                                        #
+                            file=discord.File(photo, 'archive.jpg'))                     # End of archival to make sure the is link valid
 
             with open(jsonFile, 'w') as f:
                 json.dump(miskaJSON, f, indent=4)
@@ -153,7 +153,7 @@ class animalPics(commands.Cog):
                 await ctx.send(embed=embed)
             except emptyPicArr:
                 await ctx.message.delete()
-                await ctx.send(f'{ctx.author.mention}, please upload a picture using the *upload* command',
+                await ctx.send(f'{ctx.author.mention}, please first upload a picture using the *upload* command',
                                delete_after=15)
 
     @pic.command()
@@ -188,7 +188,7 @@ class animalPics(commands.Cog):
                            delete_after=15)
         except emptyPicArr:
             await ctx.message.delete()
-            await ctx.send(f'{ctx.author.mention}, please upload a picture using the *upload* command',
+            await ctx.send(f'{ctx.author.mention}, please first upload a picture using the *upload* command',
                            delete_after=15)
 
     @id.error
@@ -241,14 +241,14 @@ class animalPics(commands.Cog):
                            delete_after=15)
         except emptyPicArr:
             await ctx.message.delete()
-            await ctx.send(f'{ctx.author.mention}, please upload a picture using the *upload* command',
+            await ctx.send(f'{ctx.author.mention}, please first upload a picture using the *upload* command',
                            delete_after=15)
 
     @tag.error
     async def tag_error(self, ctx, error):
         if isinstance(error, commands.BadArgument):
             await ctx.message.delete()
-            await ctx.send(f'{ctx.author.mention}, please a tag',
+            await ctx.send(f'{ctx.author.mention}, please specify a tag',
                            delete_after=15)
         elif isinstance(error, commands.MissingRequiredArgument):
             await ctx.message.delete()
@@ -262,6 +262,51 @@ class animalPics(commands.Cog):
             miskaJSON = json.load(f)
         tagsString = ', '.join(miskaJSON[str(ctx.guild.id)]["tags"])
         await ctx.send(f"Whitelisted tags are: {tagsString}")
+
+    @commands.command()
+    async def retag(self, ctx, id: int, newtag: str):
+        try:
+            await ctx.channel.trigger_typing()
+            with open(jsonFile, 'r') as f:
+                miskaJSON = json.load(f)
+
+            if len(miskaJSON[str(ctx.guild.id)]["animalURLS"]) == 0:
+                raise emptyPicArr
+            if id > len(miskaJSON[str(ctx.guild.id)]["animalURLS"]) or id <= 0:
+                raise pictureIdError
+            if miskaJSON[str(ctx.guild.id)]["tags"].count(newtag) == 0:
+                raise illegalTag
+
+            miskaJSON[str(ctx.guild.id)]["animalURLS"][id-1][2] = newtag
+
+            with open(jsonFile, 'w') as f:
+                json.dump(miskaJSON, f, indent=4)
+
+            await ctx.send(f'Successfully gave picture: {id} the tag: {newtag} :thumbsup:')
+        except emptyPicArr:
+            await ctx.message.delete()
+            await ctx.send(f'{ctx.author.mention}, please first upload a picture using the *upload* command',
+                           delete_after=15)
+        except pictureIdError:
+            await ctx.message.delete()
+            await ctx.send(f'{ctx.author.mention}, you gave a picture id that does not exist',
+                           delete_after=15)
+        except illegalTag:
+            await ctx.message.delete()
+            await ctx.send(f'{ctx.author.mention}, please use a legal tag use command *tags* to see legal tags',
+                           delete_after=15)
+
+    @retag.error
+    async def retag_error(self, ctx, error):
+        if isinstance(error, commands.MissingRequiredArgument):
+            await ctx.message.delete()
+            await ctx.send(f'{ctx.author.mention}, please specify a id and a new tag',
+                           delete_after=15)
+        elif isinstance(error, commands.BadArgument):
+            await ctx.message.delete()
+            await ctx.send(f'{ctx.author.mention}, please specify a id and a new tag',
+                           delete_after=15)
+
 
     @commands.command()
     @commands.has_permissions(manage_messages=True)
@@ -289,7 +334,7 @@ class animalPics(commands.Cog):
                            delete_after=15)
         except emptyPicArr:
             await ctx.message.delete()
-            await ctx.send(f'{ctx.author.mention}, please upload a picture using the *upload* command',
+            await ctx.send(f'{ctx.author.mention}, please first upload a picture using the *upload* command',
                            delete_after=15)
 
     @delete.error
