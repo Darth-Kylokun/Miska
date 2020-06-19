@@ -17,7 +17,11 @@ class emptyPicArr(commands.CommandError):
     pass
 
 
-class noPictures(commands.CommandError):
+class noAttachments(commands.CommandError):
+    pass
+
+
+class illegalTag(commands.CommandError):
     pass
 
 
@@ -25,10 +29,54 @@ class animalPics(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command()
+    @commands.group()
     async def upload(self, ctx):
-        await ctx.channel.trigger_typing()
+        if ctx.invoked_subcommand is None:
+            try:
+                await ctx.channel.trigger_typing()
+                with open(jsonFile, 'r') as f:
+                    miskaJSON = json.load(f)
+
+                archiveOfPics = self.bot.get_user(327205633319239681)
+
+                idArr = []
+
+                if len(ctx.message.attachments) == 0:
+                    raise noAttachments
+
+                for x in ctx.message.attachments:
+                    animalPicURL = x.url
+
+                    if not animalPicURL.endswith(".png") and not animalPicURL.endswith(".jpg") and not animalPicURL.endswith(".gif"):
+                        await ctx.send(f"{ctx.author.mention}, failed to upload a file because it did not have the correct file extension")
+                        continue
+
+                    miskaJSON[str(ctx.guild.id)]["animalURLS"].append([ctx.author.name, animalPicURL, "None"])
+                    idArr.append(str(len(miskaJSON[str(ctx.guild.id)]["animalURLS"])))
+                    async with aiohttp.ClientSession() as session:                                     #start of archival to make sure the link is valid
+                        async with session.get(animalPicURL) as r:                                     #
+                            if r.status != 200:                                                        #
+                                return await archiveOfPics.send('Failed to archive...')                #
+                            photo = io.BytesIO(await r.read())                                         #
+                            await archiveOfPics.send(file=discord.File(photo, 'archive.jpg'))          #End of archival to make sure the is link valid
+
+                with open(jsonFile, 'w') as f:
+                    json.dump(miskaJSON, f, indent=4)
+
+                if len(idArr) == 0:
+                    return None
+
+                ids = '/'.join(idArr)
+                await ctx.send(f'Successfully uploaded :thumbsup: ID: {ids} | Tag: None')
+            except noAttachments:
+                await ctx.message.delete()
+                await ctx.send(f'{ctx.author.mention}, please attach an image to be uploaded',
+                               delete_after=15)
+
+    @upload.command()
+    async def tag(self, ctx, tag: str):
         try:
+            await ctx.channel.trigger_typing()
             with open(jsonFile, 'r') as f:
                 miskaJSON = json.load(f)
 
@@ -36,8 +84,11 @@ class animalPics(commands.Cog):
 
             idArr = []
 
+            if miskaJSON[str(ctx.guild.id)]["tags"].count(tag) == 0:
+                raise illegalTag
+
             if len(ctx.message.attachments) == 0:
-                raise noPictures
+                raise noAttachments
 
             for x in ctx.message.attachments:
                 animalPicURL = x.url
@@ -46,14 +97,15 @@ class animalPics(commands.Cog):
                     await ctx.send(f"{ctx.author.mention}, failed to upload a file because it did not have the correct file extension")
                     continue
 
-                miskaJSON[str(ctx.guild.id)]["animalURLS"].append([ctx.author.name, animalPicURL])
+                miskaJSON[str(ctx.guild.id)]["animalURLS"].append([ctx.author.name, animalPicURL, tag])
                 idArr.append(str(len(miskaJSON[str(ctx.guild.id)]["animalURLS"])))
-                async with aiohttp.ClientSession() as session:                                     #start of archival to make sure the link is valid
-                    async with session.get(animalPicURL) as r:                                     #
-                        if r.status != 200:                                                        #
-                            return await archiveOfPics.send('Failed to archive...')                #
-                        photo = io.BytesIO(await r.read())                                         #
-                        await archiveOfPics.send(file=discord.File(photo, 'archive.jpg'))          #End of archival to make sure the is link valid
+                async with aiohttp.ClientSession() as session:  # start of archival to make sure the link is valid
+                    async with session.get(animalPicURL) as r:  #
+                        if r.status != 200:  #
+                            return await archiveOfPics.send('Failed to archive...')  #
+                        photo = io.BytesIO(await r.read())  #
+                        await archiveOfPics.send(
+                            file=discord.File(photo, 'archive.jpg'))  # End of archival to make sure the is link valid
 
             with open(jsonFile, 'w') as f:
                 json.dump(miskaJSON, f, indent=4)
@@ -62,20 +114,25 @@ class animalPics(commands.Cog):
                 return None
 
             ids = '/'.join(idArr)
-            await ctx.send(f'Successfully uploaded :thumbsup: ID: {ids}')
-        except noPictures:
+            await ctx.send(f'Successfully uploaded :thumbsup: ID: {ids} | Tag: {tag}')
+        except noAttachments:
             await ctx.message.delete()
             await ctx.send(f'{ctx.author.mention}, please attach an image to be uploaded',
                            delete_after=15)
+        except illegalTag:
+            await ctx.message.delete()
+            await ctx.send(f'{ctx.author.mention}, please use a legal tag use command *tags* to see legal tags',
+                           delete_after=15)
 
-    @commands.command()
-    async def pic(self, ctx, id=-1):
-        await ctx.channel.trigger_typing()
-        with open(jsonFile, 'r') as f:
-            miskaJSON = json.load(f)
 
-        if id == -1 or id == None:
+    @commands.group()
+    async def pic(self, ctx):
+        if ctx.invoked_subcommand is None:
             try:
+                await ctx.channel.trigger_typing()
+                with open(jsonFile, 'r') as f:
+                    miskaJSON = json.load(f)
+
                 if len(miskaJSON[str(ctx.guild.id)]["animalURLS"]) == 0:
                     raise emptyPicArr
 
@@ -83,10 +140,11 @@ class animalPics(commands.Cog):
                 picArr = miskaJSON[str(ctx.guild.id)]["animalURLS"][picId]
                 picAuthor = picArr[0]
                 picURL = picArr[1]
+                picTag = picArr[2]
 
                 embed = discord.Embed(
                     title=f"Animal Picture",
-                    description=f"Picture uploaded by {picAuthor} | ID: {picId+1}",
+                    description=f"Picture uploaded by {picAuthor} | ID: {picId+1} | Tag: {picTag}",
                     color=discord.Color.blue()
                 )
                 embed.set_image(url=picURL)
@@ -97,34 +155,113 @@ class animalPics(commands.Cog):
                 await ctx.message.delete()
                 await ctx.send(f'{ctx.author.mention}, please upload a picture using the *upload* command',
                                delete_after=15)
-        else:
-            try:
-                if id > len(miskaJSON[str(ctx.guild.id)]["animalURLS"]) or id <= 0:
-                    raise pictureIdError
-                if len(miskaJSON[str(ctx.guild.id)]["animalURLS"]) == 0:
-                    raise emptyPicArr
 
-                picArr = miskaJSON[str(ctx.guild.id)]["animalURLS"][id-1]
-                picAuthor = picArr[0]
-                picURL = picArr[1]
+    @pic.command()
+    async def id(self, ctx,  id: int):
+        try:
+            await ctx.channel.trigger_typing()
+            with open(jsonFile, 'r') as f:
+                miskaJSON = json.load(f)
 
-                embed = discord.Embed(
-                    title=f"Animal Picture",
-                    description=f"Picture uploaded by {picAuthor} | ID: {id}",
-                    color=discord.Color.blue()
-                )
-                embed.set_image(url=picURL)
-                embed.set_footer(text=ctx.author.display_name, icon_url=ctx.author.avatar_url)
+            if id > len(miskaJSON[str(ctx.guild.id)]["animalURLS"]) or id <= 0:
+                raise pictureIdError
+            if len(miskaJSON[str(ctx.guild.id)]["animalURLS"]) == 0:
+                raise emptyPicArr
 
-                await ctx.send(embed=embed)
-            except pictureIdError:
-                await ctx.message.delete()
-                await ctx.send(f'{ctx.author.mention}, you gave a picture id that does not exist',
-                               delete_after=15)
-            except emptyPicArr:
-                await ctx.message.delete()
-                await ctx.send(f'{ctx.author.mention}, please upload a picture using the *upload* command',
-                               delete_after=15)
+            picArr = miskaJSON[str(ctx.guild.id)]["animalURLS"][id - 1]
+            picAuthor = picArr[0]
+            picURL = picArr[1]
+            picTag = picArr[2]
+
+            embed = discord.Embed(
+                title=f"Animal Picture",
+                description=f"Picture uploaded by {picAuthor} | ID: {id} | Tag: {picTag}",
+                color=discord.Color.blue()
+            )
+            embed.set_image(url=picURL)
+            embed.set_footer(text=ctx.author.display_name, icon_url=ctx.author.avatar_url)
+
+            await ctx.send(embed=embed)
+        except pictureIdError:
+            await ctx.message.delete()
+            await ctx.send(f'{ctx.author.mention}, you gave a picture id that does not exist',
+                           delete_after=15)
+        except emptyPicArr:
+            await ctx.message.delete()
+            await ctx.send(f'{ctx.author.mention}, please upload a picture using the *upload* command',
+                           delete_after=15)
+
+    @id.error
+    async def id_error(self, ctx, error):
+        if isinstance(error, commands.BadArgument):
+            await ctx.message.delete()
+            await ctx.send(f'{ctx.author.mention}, please specify an integer',
+                           delete_after=15)
+        elif isinstance(error, commands.MissingRequiredArgument):
+            await ctx.message.delete()
+            await ctx.send(f'{ctx.author.mention}, please specify an id',
+                           delete_after=15)
+
+
+    @pic.command(aliases=['t'])
+    async def tag(self, ctx, tag: str):
+        try:
+            await ctx.channel.trigger_typing()
+            with open(jsonFile, 'r') as f:
+                miskaJSON = json.load(f)
+
+            if miskaJSON[str(ctx.guild.id)]["tags"].count(tag) == 0:
+                raise illegalTag
+            if len(miskaJSON[str(ctx.guild.id)]["animalURLS"]) == 0:
+                raise emptyPicArr
+
+            validIndices = []
+            for i, v in enumerate(miskaJSON[str(ctx.guild.id)]["animalURLS"]):
+                if v[-1] == tag:
+                    validIndices.append(i)
+
+            picId = random.choice(validIndices)
+            picArr = miskaJSON[str(ctx.guild.id)]["animalURLS"][picId]
+            picAuthor = picArr[0]
+            picURL = picArr[1]
+            picTag = picArr[2]
+
+            embed = discord.Embed(
+                title=f"Animal Picture",
+                description=f"Picture uploaded by {picAuthor} | ID: {picId + 1} | Tag: {picTag}",
+                color=discord.Color.blue()
+            )
+            embed.set_image(url=picURL)
+            embed.set_footer(text=ctx.author.display_name, icon_url=ctx.author.avatar_url)
+
+            await ctx.send(embed=embed)
+        except illegalTag:
+            await ctx.message.delete()
+            await ctx.send(f'{ctx.author.mention}, please specify a legal tag and to see whitelisted tags use the the tags command',
+                           delete_after=15)
+        except emptyPicArr:
+            await ctx.message.delete()
+            await ctx.send(f'{ctx.author.mention}, please upload a picture using the *upload* command',
+                           delete_after=15)
+
+    @tag.error
+    async def tag_error(self, ctx, error):
+        if isinstance(error, commands.BadArgument):
+            await ctx.message.delete()
+            await ctx.send(f'{ctx.author.mention}, please a tag',
+                           delete_after=15)
+        elif isinstance(error, commands.MissingRequiredArgument):
+            await ctx.message.delete()
+            await ctx.send(f'{ctx.author.mention}, please specify a tag',
+                           delete_after=15)
+
+    @commands.command()
+    async def tags(self, ctx):
+        await ctx.channel.trigger_typing()
+        with open(jsonFile, 'r') as f:
+            miskaJSON = json.load(f)
+        tagsString = ', '.join(miskaJSON[str(ctx.guild.id)]["tags"])
+        await ctx.send(f"Whitelisted tags are: {tagsString}")
 
     @commands.command()
     @commands.has_permissions(manage_messages=True)
