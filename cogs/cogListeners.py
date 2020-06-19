@@ -14,7 +14,7 @@ class cogListeners(commands.Cog):
         with open(jsonFile, 'r') as f:
             miskaJSON = json.load(f)
 
-        miskaJSON[str(guild.id)] = {"prefix": '?', "animalURLS": []}
+        miskaJSON[str(guild.id)] = {"prefix": '?', "animalURLS": [], "tags": ["cat", "dog", "bird", "other"]}
 
         with open(jsonFile, 'w') as f:
             json.dump(miskaJSON, f, indent=4)
