@@ -203,7 +203,7 @@ class animalPics(commands.Cog):
                            delete_after=15)
 
 
-    @pic.command(aliases=['t'])
+    @pic.command()
     async def tag(self, ctx, tag: str):
         try:
             await ctx.channel.trigger_typing()
