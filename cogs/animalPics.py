@@ -74,7 +74,7 @@ class animalPics(commands.Cog):
                                delete_after=15)
 
     @upload.command()
-    async def tag(self, ctx, tag: str):
+    async def t(self, ctx, tag: str):
         try:
             await ctx.channel.trigger_typing()
             with open(jsonFile, 'r') as f:
@@ -157,7 +157,7 @@ class animalPics(commands.Cog):
                                delete_after=15)
 
     @pic.command()
-    async def id(self, ctx,  id: int):
+    async def id(self, ctx, id: int):
         try:
             await ctx.channel.trigger_typing()
             with open(jsonFile, 'r') as f:
