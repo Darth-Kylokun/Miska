@@ -25,6 +25,10 @@ class illegalTag(commands.CommandError):
     pass
 
 
+class tagAlreadyEsist(commands.CommandError):
+    pass
+
+
 class animalPics(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -195,6 +199,7 @@ class animalPics(commands.Cog):
 
     @pic.command(aliases=['t'])
     async def tag(self, ctx, tag: str):
+        tag = tag.lower()
         try:
             await ctx.channel.trigger_typing()
             with open(jsonFile, 'r') as f:
@@ -208,7 +213,7 @@ class animalPics(commands.Cog):
             validIndices = []
             for i, v in enumerate(miskaJSON[str(ctx.guild.id)]["animalURLS"]):
                 if v[-1] == tag:
-                    validIndices.append(i)
+                    validIndices.append(i+1)
 
             picId = random.choice(validIndices)
             picArr = miskaJSON[str(ctx.guild.id)]["animalURLS"][picId]
@@ -243,6 +248,40 @@ class animalPics(commands.Cog):
         elif isinstance(error, commands.MissingRequiredArgument):
             await ctx.message.delete()
             await ctx.send(f'{ctx.author.mention}, please specify a tag',
+                           delete_after=15)
+
+    @commands.command()
+    @commands.has_permissions(manage_guild=True)
+    async def newtag(self, ctx, arg):
+        try:
+            arg = arg.lower()
+            await ctx.channel.trigger_typing()
+            with open(jsonFile, 'r') as f:
+                miskaJSON = json.load(f)
+
+            if miskaJSON[str(ctx.guild.id)]["tags"].count(arg) > 0:
+                raise tagAlreadyEsist
+
+            miskaJSON[str(ctx.guild.id)]["tags"].insert(-2, arg)
+
+            with open(jsonFile, 'w') as f:
+                json.dump(miskaJSON, f, indent=4)
+
+            await ctx.send(f"Successfully added tag: {arg}")
+        except tagAlreadyEsist:
+            await ctx.message.delete()
+            await ctx.send(f'{ctx.author.mention}, that tag already exists',
+                           delete_after=15)
+
+    @newtag.error
+    async def newtag_error(self, ctx, error):
+        if isinstance(error, commands.MissingRequiredArgument):
+            await ctx.message.delete()
+            await ctx.send(f'{ctx.author.mention}, please specify a new tag',
+                           delete_after=15)
+        elif isinstance(error, commands.MissingPermissions):
+            await ctx.message.delete()
+            await ctx.send(f'{ctx.author.mention}, you do not have the correct permissions to manage the server',
                            delete_after=15)
 
     @commands.command()
@@ -302,6 +341,47 @@ class animalPics(commands.Cog):
                            delete_after=15)
             await ctx.message.delete()
 
+    @commands.command()
+    @commands.has_permissions(manage_guild=True)
+    async def deletetag(self, ctx, tag):
+        try:
+            await ctx.channel.trigger_typing()
+            with open(jsonFile, 'r') as f:
+                miskaJSON = json.load(f)
+
+            if miskaJSON[str(ctx.guild.id)]["tags"].count(tag) == 0:
+                raise illegalTag
+
+            picsThatNeedNewTags = []
+            for i, v in enumerate(miskaJSON[str(ctx.guild.id)]["animalURLS"]):
+                if v[-1] == tag:
+                    picsThatNeedNewTags.append(str(i+1))
+
+            if len(picsThatNeedNewTags) == 0:
+                miskaJSON[str(ctx.guild.id)]["tags"].remove(tag)
+
+                with open(jsonFile, 'w') as f:
+                    json.dump(miskaJSON, f, indent=4)
+
+                return await ctx.send(f"Successfully deleted tag: {tag}")
+            else:
+                picsThatNeedNewTags = ", ".join(picsThatNeedNewTags)
+                return await ctx.send(f"{ctx.author.mention}, please retag photos ***{picsThatNeedNewTags}*** with new tags")
+        except illegalTag:
+            await ctx.message.delete()
+            await ctx.send(f'{ctx.author.mention}, specify a legal tag to delete',
+                           delete_after=15)
+
+    @deletetag.error
+    async def deletetag_error(self, ctx, error):
+        if isinstance(error, commands.MissingRequiredArgument):
+            await ctx.message.delete()
+            await ctx.send(f'{ctx.author.mention}, specify a tag to delete',
+                           delete_after=15)
+        elif isinstance(error, commands.MissingPermissions):
+            await ctx.message.delete()
+            await ctx.send(f'{ctx.author.mention}, you don\'t have the required permissions to manage the server',
+                           delete_after=15)
 
     @commands.command()
     @commands.has_permissions(manage_messages=True)
