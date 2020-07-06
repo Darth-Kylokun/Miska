@@ -8,7 +8,6 @@ from discord.ext import commands
 
 jsonFile = pathlib.Path('miska.json')
 
-
 class pictureIdError(commands.CommandError):
     pass
 
