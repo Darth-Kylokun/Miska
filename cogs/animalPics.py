@@ -123,6 +123,7 @@ class animalPics(commands.Cog):
     async def pic(self, ctx):
         if ctx.invoked_subcommand is None:
             try:
+                print("Yuh")
                 await ctx.channel.trigger_typing()
                 with open(jsonFile, 'r') as f:
                     miskaJSON = json.load(f)
@@ -199,7 +200,6 @@ class animalPics(commands.Cog):
 
     @pic.command(aliases=['t'])
     async def tag(self, ctx, tag: str):
-        tag = tag.lower()
         try:
             await ctx.channel.trigger_typing()
             with open(jsonFile, 'r') as f:
@@ -213,7 +213,7 @@ class animalPics(commands.Cog):
             validIndices = []
             for i, v in enumerate(miskaJSON[str(ctx.guild.id)]["animalURLS"]):
                 if v[-1] == tag:
-                    validIndices.append(i+1)
+                    validIndices.append(i)
 
             picId = random.choice(validIndices)
             picArr = miskaJSON[str(ctx.guild.id)]["animalURLS"][picId]
