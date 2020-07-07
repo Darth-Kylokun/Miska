@@ -236,6 +236,10 @@ class animalPics(commands.Cog):
             await ctx.message.delete()
             await ctx.send(f'{ctx.author.mention}, please first upload a picture using the *upload* command',
                            delete_after=15)
+        except:
+            await ctx.message.delete()
+            await ctx.send(f'{ctx.author.mention}, please first upload a picture to that tag using the *upload* command',
+                           delete_after=15)
 
     @tag.error
     async def tag_error(self, ctx, error):
