@@ -122,7 +122,6 @@ class animalPics(commands.Cog):
     async def pic(self, ctx):
         if ctx.invoked_subcommand is None:
             try:
-                print("Yuh")
                 await ctx.channel.trigger_typing()
                 with open(jsonFile, 'r') as f:
                     miskaJSON = json.load(f)
